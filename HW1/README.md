@@ -28,9 +28,9 @@ abcd.   // a->b->c->d
 ```
 
 ## Compile & Execute
-Compile command: &ensp; `$ make` \
-Execute command: &ensp; &ensp; `$ ./Lab1 [input file] [output file]` \
-e.g.&ensp; &ensp; &ensp; &ensp; &ensp; &ensp; &ensp; &ensp; &ensp; &ensp; &ensp; `$ ./Lab1 case1.txt out1.txt`
+Compile command: &nbsp; `$ make` \
+Execute command: &ensp; `$ ./Lab1 [input file] [output file]` \
+e.g.&ensp; &ensp; &ensp; &ensp; &ensp; &ensp; &ensp; &ensp; &ensp; &ensp; `$ ./Lab1 case1.txt out1.txt`
 
 ## How to get BDD figure
 > Command
