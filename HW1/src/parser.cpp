@@ -1,4 +1,4 @@
-#include "../header/parser.h"
+#include "parser.h"
 #include <vector>
 #include <iostream>
 #include <fstream>
