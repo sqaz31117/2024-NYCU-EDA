@@ -29,6 +29,30 @@ int calculateCutsize() {
     return cutSize;
 }
 
+// calculate Gi = FS(i) - TS(i)
+int calculateGain(int node) {
+    int FS = 0, TS = 0;
+    for (auto net : nodes[node]) {
+        // FS
+        if (nets[net].first.size() == 1 && nodePositions[node].isLeft) {
+            FS++;
+        }
+        else if (nets[net].second.size() == 1 && !nodePositions[node].isLeft) {
+            FS++;
+        }
+
+        // TS
+        if (nets[net].first.size() == 0 && !nodePositions[node].isLeft) {
+            TS++;
+        }
+        else if (nets[net].second.size() == 0 && nodePositions[node].isLeft) {
+            TS++;
+        }
+    }
+    cout << FS << " " << TS << endl;
+    return FS - TS;
+}
+
 void FMalgorithm(int bfL, int bfR) {
     // balance factor : 0.45 ~ 0.55
     // step1 : calculate Gi = FS(i) - TS(i)
@@ -81,6 +105,10 @@ int main(int argc, char *argv[]) {
         }
         lines++;
     }
-    
-    // cout << calculateCutsize() << endl;
+
+    for (int i = 0; i < 5; i++) {
+        cout << "iteration " << i << endl;
+        int G = calculateGain(i);
+        cout << "G: " << G << endl;
+    }
 }
