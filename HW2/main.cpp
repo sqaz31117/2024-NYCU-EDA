@@ -21,6 +21,14 @@ unordered_map<int, vector<int>> nodes;      // nodes[idx] store how many and whi
 unordered_map<int, NodePosition> nodePositions;
 vector<bool> freeCell;
 
+int calculateCutsize() {
+    int cutSize = 0;
+    for (auto P : nets) {
+        if (P.first.size() != 0 && P.second.size() != 0) cutSize++;
+    }
+    return cutSize;
+}
+
 void FMalgorithm(int bfL, int bfR) {
     // balance factor : 0.45 ~ 0.55
     // step1 : calculate Gi = FS(i) - TS(i)
@@ -73,4 +81,6 @@ int main(int argc, char *argv[]) {
         }
         lines++;
     }
+    
+    // cout << calculateCutsize() << endl;
 }
