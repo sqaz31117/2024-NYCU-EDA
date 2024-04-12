@@ -64,8 +64,8 @@ void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds) {
     // repeat step1 to step3 util all nodes are locked or cannot move anymore due to the balance factor
     bool canMove = true;
     
-    // while (canMove) {
-    //     canMove = false;
+    while (canMove) {
+        canMove = false;
         vector<int> Lgain;  Lgain.clear();
         vector<int> Rgain;  Rgain.clear();
 
@@ -80,17 +80,7 @@ void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds) {
                 }
             }
         }
-        cout << "L gain: ";
-        for (const int L : Lgain) {
-            cout << L << " ";
-        }
-
-        cout << "\nR gain: ";
-        for (const int R : Rgain) {
-            cout << R << " ";
-        }
-
-    // }
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -131,5 +121,5 @@ int main(int argc, char *argv[]) {
         }
         lines++;
     }
-    FMalgorithm(0, 0, 3, 2, 5);
+    // FMalgorithm(0, 0, 3, 2, 5);
 }
