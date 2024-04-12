@@ -19,7 +19,6 @@ vector<pair<list<int>, list<int>>> nets;    // nets[idx].first store L part of n
 
 unordered_map<int, vector<int>> nodes;      // nodes[idx] store how many and which net connect to it
 unordered_map<int, NodePosition> nodePositions;
-vector<bool> freeCell;
 
 int calculateCutsize() {
     int cutSize = 0;
@@ -49,22 +48,49 @@ int calculateGain(int node) {
             TS++;
         }
     }
-    cout << FS << " " << TS << endl;
     return FS - TS;
 }
 
-void FMalgorithm(int bfL, int bfR) {
+// bfL = balance factor Left bound
+// bfR = balance factor Right bound
+// Lpart = L part size
+// Rpart = R part size
+void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds) {
+    vector<bool> freeCell(Nds, true);
     // balance factor : 0.45 ~ 0.55
-    // step1 : calculate Gi = FS(i) - TS(i)
+    // step1 : calculate Gi = FS(i) - TS(i) ------> Done
     // step2 : move the largest gain node to another part if satisfy balance factor
     // step3 : lock the node which is moved to another part, and we don't need to calculate this node's Gi anymore
     // repeat step1 to step3 util all nodes are locked or cannot move anymore due to the balance factor
     bool canMove = true;
     
-    while (canMove) {
-        canMove = false;
+    // while (canMove) {
+    //     canMove = false;
+        vector<int> Lgain;  Lgain.clear();
+        vector<int> Rgain;  Rgain.clear();
 
-    }
+        for (int i = 0; i < Nds; i++) {
+            if (freeCell[i]) {
+                int gain = calculateGain(i);
+                if (nodePositions[i].isLeft) {
+                    Lgain.push_back(gain);
+                }
+                else {
+                    Rgain.push_back(gain);
+                }
+            }
+        }
+        cout << "L gain: ";
+        for (const int L : Lgain) {
+            cout << L << " ";
+        }
+
+        cout << "\nR gain: ";
+        for (const int R : Rgain) {
+            cout << R << " ";
+        }
+
+    // }
 }
 
 int main(int argc, char *argv[]) {
@@ -84,7 +110,7 @@ int main(int argc, char *argv[]) {
             iss >> N >> M;
             mid = M / 2;
             nets.resize(N);
-            freeCell.resize(M, false);
+            // freeCell.resize(M, false);
             continue;
         }
         
@@ -105,10 +131,5 @@ int main(int argc, char *argv[]) {
         }
         lines++;
     }
-
-    for (int i = 0; i < 5; i++) {
-        cout << "iteration " << i << endl;
-        int G = calculateGain(i);
-        cout << "G: " << G << endl;
-    }
+    FMalgorithm(0, 0, 3, 2, 5);
 }
