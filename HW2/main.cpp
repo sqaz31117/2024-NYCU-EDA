@@ -20,6 +20,10 @@ vector<pair<list<int>, list<int>>> nets;    // nets[idx].first store L part of n
 unordered_map<int, vector<int>> nodes;      // nodes[idx] store how many and which net connect to it
 unordered_map<int, NodePosition> nodePositions;
 
+void updateAnswer() {
+    // TODO
+}
+
 int calculateCutsize() {
     int cutSize = 0;
     for (auto P : nets) {
@@ -97,9 +101,8 @@ void moveNode(int nodeToMove, bool toLeft) {
 void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds) {
     vector<bool> freeCell(Nds, true);
     bool canMove = true;
-    int counter = 1;
+    
     while (canMove) {
-        cout << "Cutsize: " << calculateCutsize() << endl;
         canMove = false;
         vector<pair<int,int>> Lgain;  Lgain.clear();
         vector<pair<int,int>> Rgain;  Rgain.clear();
@@ -118,17 +121,6 @@ void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds) {
         }
         sort(Lgain.rbegin(), Lgain.rend());
         sort(Rgain.rbegin(), Rgain.rend());
-        cout << "L gain, Nodes:\n";
-        for (auto const& P : Lgain) {
-            cout << P.first << " " << P.second << endl;
-        }
-        cout << "R gain, Nodes:\n";
-        for (auto const& P : Rgain) {
-            cout << P.first << " " << P.second << endl;
-        }
-
-        cout << "Move " << counter << ":";
-        counter++;
 
         // step2: check balance factor and chooose the best one to move
         int Lsize = Lgain.size();
@@ -137,8 +129,6 @@ void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds) {
             if (Lgain[0].first >= Rgain[0].first) {
                 if (bfL <= Rpart+1 &&  Rpart+1 <= bfR) {
                     int moveID = Lgain[0].second;
-                    cout << moveID << endl;
-                    // need to maintain nets and nodePositions
                     moveNode(moveID, false);
                     canMove = true;
                     freeCell[moveID] = false;
@@ -147,7 +137,6 @@ void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds) {
                 }
                 else if (bfL <= Lpart+1 && Lpart+1 <= bfR) {
                     int moveID = Rgain[0].second;
-                    cout << moveID << endl;
                     moveNode(moveID, true);
                     canMove = true;
                     freeCell[moveID] = false;
@@ -158,7 +147,6 @@ void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds) {
             else {
                 if (bfL <= Lpart+1 && Lpart+1 <= bfR) {
                     int moveID = Rgain[0].second;
-                    cout << moveID << endl;
                     moveNode(moveID, true);
                     canMove = true;
                     freeCell[moveID] = false;
@@ -167,7 +155,6 @@ void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds) {
                 }
                 else if (bfL <= Rpart+1 &&  Rpart+1 <= bfR) {
                     int moveID = Lgain[0].second;
-                    cout << moveID << endl;
                     moveNode(moveID, false);
                     canMove = true;
                     freeCell[moveID] = false;
@@ -179,7 +166,6 @@ void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds) {
         else if (Lsize != 0 && Rsize == 0) {
             if (bfL <= Rpart+1 &&  Rpart+1 <= bfR) {
                 int moveID = Lgain[0].second;
-                cout << moveID << endl;
                 moveNode(moveID, false);
                 canMove = true;
                 freeCell[moveID] = false;
@@ -190,7 +176,6 @@ void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds) {
         else if (Lsize == 0 && Rsize != 0) {
             if (bfL <= Lpart+1 && Lpart+1 <= bfR) {
                 int moveID = Rgain[0].second;
-                cout << moveID << endl;
                 moveNode(moveID, true);
                 canMove = true;
                 freeCell[moveID] = false;
@@ -219,7 +204,6 @@ int main(int argc, char *argv[]) {
             iss >> N >> M;
             mid = M / 2;
             nets.resize(N);
-            // freeCell.resize(M, false);
             continue;
         }
         
@@ -227,14 +211,10 @@ int main(int argc, char *argv[]) {
             int nodeIdx = word-1;
             if (nodeIdx % 2) {   // right part
                 nets[lines].second.push_back(nodeIdx);
-                auto END = nets[lines].second.end();
-                --END;
                 nodePositions[nodeIdx].isLeft = false;
             }
             else {              // left part
                 nets[lines].first.push_back(nodeIdx);
-                auto END = nets[lines].first.end();
-                --END;
                 nodePositions[nodeIdx].isLeft = true;
             }
             nodes[nodeIdx].push_back(lines);
@@ -242,5 +222,4 @@ int main(int argc, char *argv[]) {
         lines++;
     }
     FMalgorithm(3, 5, 4, 4, 8);
-    cout << "Cutsize: " << calculateCutsize() << endl;
 }
