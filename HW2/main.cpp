@@ -8,11 +8,15 @@
 #include <sstream>
 #include <algorithm>
 #include <climits>
+#include <chrono>
+#include <random>
 
 using namespace std;
+using namespace std::chrono;
 
 struct NodePosition {
     bool isLeft; // true if in L part, false if in R part
+    unordered_map<int, list<int>::iterator> pos;
 };
 
 vector<pair<list<int>, list<int>>> nets;    // nets[idx].first store L part of nodes
@@ -57,32 +61,32 @@ int calculateGain(int node) {
 }
 
 void moveNode(int nodeToMove, bool toLeft) {
-    NodePosition& pos = nodePositions[nodeToMove];
-    if (pos.isLeft && !toLeft) {
-        // node at left and move to right
-        // TODO
-        // Do not go over all list
-        for (const int& net : nodes[nodeToMove]) {
-            list<int>::iterator iter1 = std::find (nets[net].first.begin(), nets[net].first.end(), nodeToMove);
+    NodePosition& Pos = nodePositions[nodeToMove];
+    if (Pos.isLeft && !toLeft) {
+        nodePositions[nodeToMove].isLeft = false;
+        for (const int net : nodes[nodeToMove]) {
+            // list<int>::iterator iter1 = std::find (nets[net].first.begin(), nets[net].first.end(), nodeToMove);
+            list<int>::iterator iter1 = nodePositions[nodeToMove].pos[net];
             if (iter1 != nets[net].first.end()) {
                 // can move
                 nets[net].first.erase(iter1);               // erase from left part
                 nets[net].second.push_back(nodeToMove);     // move to right part
-                nodePositions[nodeToMove].isLeft = false;   // move to right part
+                nodePositions[nodeToMove].pos[net] = --nets[net].second.end();
             }
             else {
                 cout << "some error occur at L -> R\n";
             }
         }
     }
-    else if (!pos.isLeft && toLeft) {
-        for (const int& net : nodes[nodeToMove]) {
-            list<int>::iterator iter2 = std::find (nets[net].second.begin(), nets[net].second.end(), nodeToMove);
+    else if (!Pos.isLeft && toLeft) {
+        nodePositions[nodeToMove].isLeft = true;   // move to left part
+        for (const int net : nodes[nodeToMove]) {
+            list<int>::iterator iter2 = nodePositions[nodeToMove].pos[net];
             if (iter2 != nets[net].second.end()) {
                 // can move
                 nets[net].second.erase(iter2);               // erase from right part
                 nets[net].first.push_back(nodeToMove);     // move to left part
-                nodePositions[nodeToMove].isLeft = false;   // move to left part
+                nodePositions[nodeToMove].pos[net] = --nets[net].first.end();
             }
             else {
                 cout << "some error occur at R -> L\n";
@@ -90,6 +94,7 @@ void moveNode(int nodeToMove, bool toLeft) {
         }
     }
 }
+
 // Algorithm
     // step1 : calculate Gi = FS(i) - TS(i) ------> Done
     // step2 : move the largest gain node to another part if satisfy balance factor
@@ -101,14 +106,17 @@ void moveNode(int nodeToMove, bool toLeft) {
 // bfR = balance factor Right bound
 // Lpart = L part size
 // Rpart = R part size
-void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds) {
+void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds, const string name) {
+    auto start = high_resolution_clock::now();
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<milliseconds>(stop - start);
     vector<bool> freeCell(Nds, true);
     bool canMove = true;
-    
+    int cnt = 0;
+    std::ofstream outFile(name);
     while (canMove) {
         canMove = false;
-        // vector<pair<int,int>> Lgain;  Lgain.clear();
-        // vector<pair<int,int>> Rgain;  Rgain.clear();
+        outFile << calculateCutsize() << '\n';
         unordered_map<int, vector<int>> LPmax; LPmax.clear();
         unordered_map<int, vector<int>> RPmax; RPmax.clear();
         int LPidx = INT_MIN;
@@ -143,6 +151,7 @@ void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds) {
                 freeCell[moveID] = false;
                 ++Rpart;
                 --Lpart;
+                cnt++;
             }
             else if (RPidx != INT_MIN && bfL <= newLsize && newLsize <= bfR) {
                 int moveID = RPmax[RPidx][0];
@@ -151,6 +160,7 @@ void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds) {
                 freeCell[moveID] = false;
                 --Rpart;
                 ++Lpart;
+                cnt++;
             }
         }
         else {
@@ -163,6 +173,7 @@ void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds) {
                 freeCell[moveID] = false;
                 --Rpart;
                 ++Lpart;
+                cnt++;
             }
             else if (LPidx != INT_MIN && bfL <= newRsize && newRsize <= bfR) {
                 int moveID = LPmax[LPidx][0];
@@ -171,13 +182,24 @@ void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds) {
                 freeCell[moveID] = false;
                 ++Rpart;
                 --Lpart;
+                cnt++;
             }
         }
+        stop = high_resolution_clock::now();
+        duration = duration_cast<milliseconds>(stop - start);
+        if (duration.count() / 1000 > 28) break;
     } // end while
+    // cout << "Time taken by function: " << duration.count() << " milliseconds" << endl;
 }
 
 int main(int argc, char *argv[]) {
+    // auto start = high_resolution_clock::now();
+    std::ios_base::sync_with_stdio(false);
+    std::cin.tie(nullptr);
+    std::cout.tie(nullptr);
+
     std::ifstream inFile(argv[1]);
+
     if (!inFile.is_open()) {
         std::cerr << "Can't open file\n";
         return 1;
@@ -200,23 +222,23 @@ int main(int argc, char *argv[]) {
             if (nodeIdx % 2) {   // right part
                 nets[lines].second.push_back(nodeIdx);
                 nodePositions[nodeIdx].isLeft = false;
+                nodePositions[nodeIdx].pos[lines] = --nets[lines].second.end();
             }
             else {              // left part
                 nets[lines].first.push_back(nodeIdx);
                 nodePositions[nodeIdx].isLeft = true;
+                nodePositions[nodeIdx].pos[lines] = --nets[lines].first.end();
             }
             nodes[nodeIdx].push_back(lines);
         }
         lines++;
     }
-    // if ((Lp + Rp) != M) return 1;
-    // cout << Lp << " " << Rp << endl;
+
     int l = 0.45*M;
     int r = 0.55*M;
-    // if (M % 2) {
-    //     FMalgorithm(l, r, (M/2)+1, M/2, M);
-    // } else {
-    //     FMalgorithm(l, r, M/2, M/2, M);
-    // }
-    FMalgorithm(3, 5, 4, 4, 8);
+    if (M % 2) {
+        FMalgorithm(l, r, (M/2)+1, M/2, M, argv[2]);
+    } else {
+        FMalgorithm(l, r, M/2, M/2, M, argv[2]);
+    }
 }
