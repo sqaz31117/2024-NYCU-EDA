@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <sstream>
 #include <algorithm>
+#include <climits>
 
 using namespace std;
 
@@ -59,6 +60,8 @@ void moveNode(int nodeToMove, bool toLeft) {
     NodePosition& pos = nodePositions[nodeToMove];
     if (pos.isLeft && !toLeft) {
         // node at left and move to right
+        // TODO
+        // Do not go over all list
         for (const int& net : nodes[nodeToMove]) {
             list<int>::iterator iter1 = std::find (nets[net].first.begin(), nets[net].first.end(), nodeToMove);
             if (iter1 != nets[net].first.end()) {
@@ -104,68 +107,65 @@ void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds) {
     
     while (canMove) {
         canMove = false;
-        vector<pair<int,int>> Lgain;  Lgain.clear();
-        vector<pair<int,int>> Rgain;  Rgain.clear();
+        // vector<pair<int,int>> Lgain;  Lgain.clear();
+        // vector<pair<int,int>> Rgain;  Rgain.clear();
+        unordered_map<int, vector<int>> LPmax; LPmax.clear();
+        unordered_map<int, vector<int>> RPmax; RPmax.clear();
+        int LPidx = INT_MIN;
+        int RPidx = INT_MIN;
 
-        // step1
+        // TODO
         for (int i = 0; i < Nds; i++) {
             if (freeCell[i]) {
                 int gain = calculateGain(i);
                 if (nodePositions[i].isLeft) {
-                    Lgain.push_back({gain, i});
+                    LPmax[gain].push_back(i);
+                    LPidx = max(LPidx, gain);
                 }
                 else {
-                    Rgain.push_back({gain, i});
+                    RPmax[gain].push_back(i);
+                    RPidx = max(RPidx, gain);
                 }
             }
         }
-        sort(Lgain.rbegin(), Lgain.rend());
-        sort(Rgain.rbegin(), Rgain.rend());
 
         // step2: check balance factor and chooose the best one to move
-        int Lsize = Lgain.size();
-        int Rsize = Rgain.size();
-        if (Lsize != 0 && Rsize != 0) {
-            if (Lgain[0].first >= Rgain[0].first) {
-                if (bfL <= Rpart+1 &&  Rpart+1 <= bfR) {
-                    int moveID = Lgain[0].second;
-                    moveNode(moveID, false);
-                    canMove = true;
-                    freeCell[moveID] = false;
-                    ++Rpart;
-                    --Lpart;
-                }
-                else if (bfL <= Lpart+1 && Lpart+1 <= bfR) {
-                    int moveID = Rgain[0].second;
-                    moveNode(moveID, true);
-                    canMove = true;
-                    freeCell[moveID] = false;
-                    ++Lpart;
-                    --Rpart;
-                }
+        // int Lsize = Lgain.size();
+        // int Rsize = Rgain.size();
+        if (LPidx >= RPidx) {
+            if (LPidx == INT_MIN) break;
+            int newLsize = Lpart+1;
+            int newRsize = Rpart+1;
+            if (bfL <= newRsize && newRsize <= bfR) {
+                int moveID = LPmax[LPidx][0];
+                moveNode(moveID, false);
+                canMove = true;
+                freeCell[moveID] = false;
+                ++Rpart;
+                --Lpart;
             }
-            else {
-                if (bfL <= Lpart+1 && Lpart+1 <= bfR) {
-                    int moveID = Rgain[0].second;
-                    moveNode(moveID, true);
-                    canMove = true;
-                    freeCell[moveID] = false;
-                    ++Lpart;
-                    --Rpart;
-                }
-                else if (bfL <= Rpart+1 &&  Rpart+1 <= bfR) {
-                    int moveID = Lgain[0].second;
-                    moveNode(moveID, false);
-                    canMove = true;
-                    freeCell[moveID] = false;
-                    ++Rpart;
-                    --Lpart;
-                }
+            else if (RPidx != INT_MIN && bfL <= newLsize && newLsize <= bfR) {
+                int moveID = RPmax[RPidx][0];
+                moveNode(moveID, true);
+                canMove = true;
+                freeCell[moveID] = false;
+                --Rpart;
+                ++Lpart;
             }
         }
-        else if (Lsize != 0 && Rsize == 0) {
-            if (bfL <= Rpart+1 &&  Rpart+1 <= bfR) {
-                int moveID = Lgain[0].second;
+        else {
+            int newLsize = Lpart+1;
+            int newRsize = Rpart+1;
+            if (bfL <= newLsize && newLsize <= bfR) {
+                int moveID = RPmax[RPidx][0];
+                moveNode(moveID, true);
+                canMove = true;
+                freeCell[moveID] = false;
+                --Rpart;
+                ++Lpart;
+            }
+            else if (LPidx != INT_MIN && bfL <= newRsize && newRsize <= bfR) {
+                int moveID = LPmax[LPidx][0];
                 moveNode(moveID, false);
                 canMove = true;
                 freeCell[moveID] = false;
@@ -173,17 +173,6 @@ void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds) {
                 --Lpart;
             }
         }
-        else if (Lsize == 0 && Rsize != 0) {
-            if (bfL <= Lpart+1 && Lpart+1 <= bfR) {
-                int moveID = Rgain[0].second;
-                moveNode(moveID, true);
-                canMove = true;
-                freeCell[moveID] = false;
-                ++Lpart;
-                --Rpart;
-            }
-        }
-
     } // end while
 }
 
@@ -195,14 +184,13 @@ int main(int argc, char *argv[]) {
     }
 
     string line;
-    int N = 0, M = 0, mid = 0, lines = 0;
+    int N = 0, M = 0, lines = 0;
 
     while(getline(inFile, line)) {
         istringstream iss(line);
         int word;
         if (N == 0 && M == 0) {
             iss >> N >> M;
-            mid = M / 2;
             nets.resize(N);
             continue;
         }
@@ -221,5 +209,14 @@ int main(int argc, char *argv[]) {
         }
         lines++;
     }
+    // if ((Lp + Rp) != M) return 1;
+    // cout << Lp << " " << Rp << endl;
+    int l = 0.45*M;
+    int r = 0.55*M;
+    // if (M % 2) {
+    //     FMalgorithm(l, r, (M/2)+1, M/2, M);
+    // } else {
+    //     FMalgorithm(l, r, M/2, M/2, M);
+    // }
     FMalgorithm(3, 5, 4, 4, 8);
 }
