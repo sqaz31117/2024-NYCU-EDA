@@ -25,8 +25,14 @@ vector<pair<list<int>, list<int>>> nets;    // nets[idx].first store L part of n
 unordered_map<int, vector<int>> nodes;      // nodes[idx] store how many and which net connect to it
 unordered_map<int, NodePosition> nodePositions;
 
-void updateAnswer() {
+vector<int> updateAnswer(int Nds) {
     // TODO
+    vector<int> ans(Nds);
+    for (int i = 0; i < Nds; ++i) {
+        if (nodePositions[i].isLeft) ans[i] = 0;
+        else ans[i] = 1;
+    }
+    return ans;
 }
 
 int calculateCutsize() {
@@ -106,17 +112,23 @@ void moveNode(int nodeToMove, bool toLeft) {
 // bfR = balance factor Right bound
 // Lpart = L part size
 // Rpart = R part size
-void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds, const string name) {
+vector<int> FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds) {
     auto start = high_resolution_clock::now();
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);
     vector<bool> freeCell(Nds, true);
     bool canMove = true;
-    int cnt = 0;
-    std::ofstream outFile(name);
+    vector<int> ans;
+    int prevCut = INT_MAX;
+
     while (canMove) {
         canMove = false;
-        outFile << calculateCutsize() << '\n';
+        int curCut = calculateCutsize();
+        cout << curCut << endl;
+        if (curCut < prevCut) {
+            ans = updateAnswer(Nds);
+            prevCut = curCut;
+        }
         unordered_map<int, vector<int>> LPmax; LPmax.clear();
         unordered_map<int, vector<int>> RPmax; RPmax.clear();
         int LPidx = INT_MIN;
@@ -151,7 +163,6 @@ void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds, const string n
                 freeCell[moveID] = false;
                 ++Rpart;
                 --Lpart;
-                cnt++;
             }
             else if (RPidx != INT_MIN && bfL <= newLsize && newLsize <= bfR) {
                 int moveID = RPmax[RPidx][0];
@@ -160,7 +171,6 @@ void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds, const string n
                 freeCell[moveID] = false;
                 --Rpart;
                 ++Lpart;
-                cnt++;
             }
         }
         else {
@@ -173,7 +183,6 @@ void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds, const string n
                 freeCell[moveID] = false;
                 --Rpart;
                 ++Lpart;
-                cnt++;
             }
             else if (LPidx != INT_MIN && bfL <= newRsize && newRsize <= bfR) {
                 int moveID = LPmax[LPidx][0];
@@ -182,14 +191,13 @@ void FMalgorithm(int bfL, int bfR, int Lpart, int Rpart, int Nds, const string n
                 freeCell[moveID] = false;
                 ++Rpart;
                 --Lpart;
-                cnt++;
             }
         }
         stop = high_resolution_clock::now();
         duration = duration_cast<milliseconds>(stop - start);
         if (duration.count() / 1000 > 28) break;
     } // end while
-    // cout << "Time taken by function: " << duration.count() << " milliseconds" << endl;
+    return ans;
 }
 
 int main(int argc, char *argv[]) {
@@ -233,12 +241,24 @@ int main(int argc, char *argv[]) {
         }
         lines++;
     }
+    inFile.close();
 
     int l = 0.45*M;
     int r = 0.55*M;
+    vector<int> ans;
     if (M % 2) {
-        FMalgorithm(l, r, (M/2)+1, M/2, M, argv[2]);
+        ans = FMalgorithm(l, r, (M/2)+1, M/2, M);
     } else {
-        FMalgorithm(l, r, M/2, M/2, M, argv[2]);
+        ans = FMalgorithm(l, r, M/2, M/2, M);
     }
+
+    std::ofstream outFile(argv[2]);
+    if (!outFile.is_open()) {
+        std::cerr << "Can't open output file\n";
+        return 1;
+    }
+    for (int i = 0; i < M; i++) {
+        outFile << ans[i] << '\n';
+    }
+    return 0;
 }
